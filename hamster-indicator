@@ -29,6 +29,8 @@ import logging
 import datetime as dt
 import os.path
 
+from itertools import groupby
+
 import pygtk
 pygtk.require("2.0")
 
@@ -36,7 +38,6 @@ import dbus, dbus.service, dbus.mainloop.glib
 import locale
 
 from hamster.configuration import conf, runtime, dialogs
-
 try:
     from hamster import stuff
     from hamster import i18n
@@ -133,6 +134,26 @@ class HamsterIndicator(HamsterApplet):
 
         self.append_separator(self.menu)
 
+        # List todays activities with the total time spend on each
+        # TODO place in update function and subscribe to 'facts-changed' and 'activities-changed'
+        # TODO place check in front of active item, this could also be done for the current activity which would negate the 'stop'-button.
+        # If the stop button is removed the current activity could be merged in the list of totals as: <activity> <total time> (<running time>)
+        # TODO in that case, sort the list on last active activity so the current activity is on top, as it is with the current setup
+        # TODO make activities with same name in different categories visually distinct
+        facts = runtime.storage.get_todays_facts()
+        group = lambda fact:(fact.category, fact.activity)
+        facts = sorted(facts, key=group)
+        for (category, activity), grouped_facts in groupby(facts, key=group):
+            total_minutes = sum(fact.delta.seconds for fact in grouped_facts) / 60
+            label = "%s %s" % (activity, stuff.format_duration(total_minutes, False))
+
+            self.previous_activity_item = gtk.MenuItem(label)
+            self.menu.append(self.previous_activity_item)
+            self.previous_activity_item.connect("activate", self.on_previous_activity_activated, category, activity)
+            self.previous_activity_item.show()
+
+        self.append_separator(self.menu)
+
         self.earlier_activity_item = gtk.MenuItem(_(u"Add earlier activity"))
         self.menu.append(self.earlier_activity_item)
         self.earlier_activity_item.connect("activate", self.on_earlier_activity_activated, None)
@@ -185,6 +206,13 @@ class HamsterIndicator(HamsterApplet):
     def on_stop_activity_activated(self, *args):
         runtime.storage.stop_tracking()
         self.last_activity = None
+
+    # Stop the current activity (if any) and start tracking based on the last fact of the given activity
+    #TODO get last fact in given (category, activity), start new activity with this fact's tags
+    def on_previous_activity_activated(self, menuitem, category, activity):
+        runtime.storage.stop_tracking()
+        runtime.storage.add_fact(stuff.Fact(activity, start_time=None, end_time=None))
+        #self.set_last_activity() # needed?
 
     def on_show_preferences_activated(self, *args):
         dialogs.prefs.show(self.indicator)
