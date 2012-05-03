@@ -67,7 +67,6 @@ except:
     pynotify = None
 
 
-
 class FakeApplet(object):
     '''Fake Applet class to trick HamsterApplet'''
 
@@ -140,13 +139,18 @@ class HamsterIndicator(HamsterApplet):
         # If the stop button is removed the current activity could be merged in the list of totals as: <activity> <total time> (<running time>)
         # TODO in that case, sort the list on last active activity so the current activity is on top, as it is with the current setup
         # TODO make activities with same name in different categories visually distinct
-        facts = runtime.storage.get_todays_facts()
+        
+        # TODO today should respect 'midnight' as set in the Hamster configuration
+        today = self.get_today();
+        start_date = today - dt.timedelta(days=2)
+        end_date = dt.datetime.now() # no results without end date
+        facts = runtime.storage.get_facts(start_date, end_date)
         group = lambda fact:(fact.category, fact.activity)
         facts = sorted(facts, key=group)
         for (category, activity), grouped_facts in groupby(facts, key=group):
-            total_minutes = sum(fact.delta.seconds for fact in grouped_facts) / 60
+            total_minutes = sum(self.get_seconds_from_fact(fact, today) for fact in grouped_facts) / 60
             label = "%s %s" % (activity, stuff.format_duration(total_minutes, False))
-
+            
             self.previous_activity_item = gtk.MenuItem(label)
             self.menu.append(self.previous_activity_item)
             self.previous_activity_item.connect("activate", self.on_previous_activity_activated, category, activity)
@@ -178,7 +182,6 @@ class HamsterIndicator(HamsterApplet):
         self.quit_item.connect("activate", gtk.main_quit, None)
         self.quit_item.show()
 
-
         # Call constructor after the gtk.Menu is ready
         super(HamsterIndicator, self).__init__(applet)
 
@@ -200,6 +203,18 @@ class HamsterIndicator(HamsterApplet):
         self.window.set_skip_pager_hint(False)
 
 
+    def get_today(self):
+        day_start = conf.get("day_start_minutes")
+        day_start = dt.time(day_start / 60, day_start % 60)
+        today = dt.datetime.now() - dt.timedelta(hours = day_start.hour,
+                                                  minutes = day_start.minute)
+        return today;
+                                                  
+    def get_seconds_from_fact(self, fact, today):
+        if (not fact.end_time or fact.end_time.date() == today.date()):
+            return fact.delta.seconds
+        return 0
+    
     def on_new_activity_activated(self, *args):
         self.show_dialog()
 
@@ -392,8 +407,6 @@ class HamsterIndicator(HamsterApplet):
         self.new_name.set_text("");
         self.new_tags.set_text("");
         gobject.idle_add(self._delayed_display)
-
-
 
 if __name__ == "__main__":
     i18n.setup_i18n()
