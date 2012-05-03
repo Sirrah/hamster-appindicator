@@ -139,8 +139,6 @@ class HamsterIndicator(HamsterApplet):
         # If the stop button is removed the current activity could be merged in the list of totals as: <activity> <total time> (<running time>)
         # TODO in that case, sort the list on last active activity so the current activity is on top, as it is with the current setup
         # TODO make activities with same name in different categories visually distinct
-        
-        # TODO today should respect 'midnight' as set in the Hamster configuration
         today = self.get_today();
         start_date = today - dt.timedelta(days=2)
         end_date = dt.datetime.now() # no results without end date
@@ -148,7 +146,7 @@ class HamsterIndicator(HamsterApplet):
         group = lambda fact:(fact.category, fact.activity)
         facts = sorted(facts, key=group)
         for (category, activity), grouped_facts in groupby(facts, key=group):
-            total_minutes = sum(self.get_seconds_from_fact(fact, today) for fact in grouped_facts) / 60
+            total_minutes = sum(self.get_duration_from_fact(fact, today) for fact in grouped_facts) / 60
             label = "%s %s" % (activity, stuff.format_duration(total_minutes, False))
             
             self.previous_activity_item = gtk.MenuItem(label)
@@ -203,6 +201,7 @@ class HamsterIndicator(HamsterApplet):
         self.window.set_skip_pager_hint(False)
 
 
+    # Return todays datetime, respecting midnight as configured in Hamster
     def get_today(self):
         day_start = conf.get("day_start_minutes")
         day_start = dt.time(day_start / 60, day_start % 60)
@@ -210,7 +209,8 @@ class HamsterIndicator(HamsterApplet):
                                                   minutes = day_start.minute)
         return today;
                                                   
-    def get_seconds_from_fact(self, fact, today):
+    # Only count this facts delta if this fact is from today 
+    def get_duration_from_fact(self, fact, today):
         if (not fact.end_time or fact.end_time.date() == today.date()):
             return fact.delta.seconds
         return 0
