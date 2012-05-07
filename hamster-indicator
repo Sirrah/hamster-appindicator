@@ -133,6 +133,7 @@ class HamsterIndicator(HamsterApplet):
         # TODO place check in front of active item, this could also be done for the current activity which would negate the 'stop'-button.
         # If the stop button is removed the current activity could be merged in the list of totals as: <activity> <total time> (<running time>)
         # TODO make activities with same name in different categories visually distinct
+        # TODO pressing the current activity: display  the 'new activity' dialog or just stop the activity?
         today = self.get_today();
         start_date = today - dt.timedelta(days=5)
         end_date = dt.datetime.now() # no results without end date
@@ -142,10 +143,10 @@ class HamsterIndicator(HamsterApplet):
             total_minutes = sum(self.get_duration_from_fact(fact, today) for fact in grouped_facts) / 60
             label = "%s %s" % (activity, stuff.format_duration(total_minutes, False)) if total_minutes > 0 else str(activity)
             
-            self.previous_activity_item = gtk.MenuItem(label)
-            self.menu.append(self.previous_activity_item)
-            self.previous_activity_item.connect("activate", self.on_previous_activity_activated, category, activity)
-            self.previous_activity_item.show()
+            previous_activity_item = gtk.MenuItem(label)
+            self.menu.append(previous_activity_item)
+            previous_activity_item.connect("activate", self.on_previous_activity_activated, category, activity)
+            previous_activity_item.show()
 
         self.append_separator(self.menu)
 
