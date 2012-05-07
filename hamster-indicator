@@ -143,9 +143,8 @@ class HamsterIndicator(HamsterApplet):
         start_date = today - dt.timedelta(days=2)
         end_date = dt.datetime.now() # no results without end date
         facts = runtime.storage.get_facts(start_date, end_date)
-        group = lambda fact:(fact.category, fact.activity)
-        facts = sorted(facts, key=group)
-        for (category, activity), grouped_facts in groupby(facts, key=group):
+        facts.sort(key=lambda fact:fact.end_time or dt.datetime.now(), reverse=True)
+        for (category, activity), grouped_facts in groupby(facts, key=lambda fact:(fact.category, fact.activity)):
             total_minutes = sum(self.get_duration_from_fact(fact, today) for fact in grouped_facts) / 60
             label = "%s %s" % (activity, stuff.format_duration(total_minutes, False))
             
@@ -208,7 +207,7 @@ class HamsterIndicator(HamsterApplet):
         today = dt.datetime.now() - dt.timedelta(hours = day_start.hour,
                                                   minutes = day_start.minute)
         return today;
-                                                  
+                                              
     # Only count this facts delta if this fact is from today 
     def get_duration_from_fact(self, fact, today):
         if (not fact.end_time or fact.end_time.date() == today.date()):
