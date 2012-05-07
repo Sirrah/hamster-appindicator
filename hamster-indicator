@@ -191,25 +191,35 @@ class HamsterIndicator(HamsterApplet):
         # If the stop button is removed the current activity could be merged in the list of totals as: <activity> <total time> (<running time>)
         # TODO make activities with same name in different categories visually distinct
         # TODO pressing the current activity: display  the 'new activity' dialog or just stop the activity?
-        
+        # TODO prefer to update only when the menu opens
         # remove any previously displayed activities from the menu
         for item in self.previous_activity_items:
-            menu.remove(item)
+            item.destroy()
         del self.previous_activity_items[:]
         
-        position = 2
+        position = 2 # position this list of activities directly after the first break
         today = self.get_today()
         start_date = today - dt.timedelta(days=5)
         end_date = dt.datetime.now() # Hamster returns zero results without an end date
         facts = runtime.storage.get_facts(start_date, end_date)
         facts.sort(key=lambda fact:(fact.category, fact.activity, fact.end_time or dt.datetime.now()), reverse=True)
+        print "[facts sort]"
+        print map(lambda fact:("%s - %s (%s)" % (fact.category, fact.activity, fact.end_time)), facts)
         grouped = map(lambda group:(list(group[1])), groupby(facts, key=lambda fact:(fact.category, fact.activity)))
         grouped.sort(key=lambda group: max(group, key=lambda fact:fact.end_time or dt.datetime.now()), reverse=True)
+        print "[grouped]"
         for group in grouped:
             category = group[0].category
             activity = group[0].activity
+            print "%s - %s (%s)" % (category, activity, max(group, key=lambda fact:fact.end_time or dt.datetime.now()).end_time)
             total_minutes = sum(self.get_duration_from_fact(fact, today) for fact in group) / 60
-            label = "%s %s" % (activity, stuff.format_duration(total_minutes, False)) if total_minutes > 0 else str(activity)
+            label = activity
+            if self.activity == activity:
+                label = "%s %s (%s)" % (activity, stuff.format_duration(total_minutes, False), self.duration)
+            elif total_minutes > 0:
+                label = "%s %s" % (activity, stuff.format_duration(total_minutes, False))
+            else:
+                label = activity
             
             previous_activity_item = gtk.MenuItem(label)
             menu.insert(previous_activity_item, position)
