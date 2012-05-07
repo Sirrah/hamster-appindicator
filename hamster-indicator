@@ -130,7 +130,7 @@ class HamsterIndicator(HamsterApplet):
 
         self.previous_activity_items_pos = self.append_separator(self.menu)
 
-        self.add_previous_activities(self.menu)
+        # This spot will be filled with previous activities added after a call to  self.update_label 
 
         self.append_separator(self.menu)
 
@@ -183,13 +183,16 @@ class HamsterIndicator(HamsterApplet):
         # Do not skip the pager
         self.window.set_skip_pager_hint(False)
         
-    def add_previous_activities(self, menu):
+    # Displays a list of the previous activities.
+    def show_previous_activities(self, menu):
         # List todays activities with the total time spend on each
         # TODO place in update function and subscribe to 'facts-changed' and 'activities-changed'
         # TODO place check in front of active item, this could also be done for the current activity which would negate the 'stop'-button.
         # If the stop button is removed the current activity could be merged in the list of totals as: <activity> <total time> (<running time>)
         # TODO make activities with same name in different categories visually distinct
         # TODO pressing the current activity: display  the 'new activity' dialog or just stop the activity?
+        
+        # remove any previously displayed activities from the menu
         for item in self.previous_activity_items:
             menu.remove(item)
         del self.previous_activity_items[:]
@@ -320,7 +323,7 @@ class HamsterIndicator(HamsterApplet):
         self.refresh_menu()
         
         # update the list of previous activities
-        #self.add_previous_activities(self.menu)
+        self.show_previous_activities(self.menu)
 
     def _clamp_text(self, text, length=25, with_ellipsis=True, is_indicator=False):
         text = stuff.escape_pango(text)
