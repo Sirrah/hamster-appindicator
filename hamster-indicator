@@ -139,6 +139,11 @@ class HamsterIndicator(HamsterApplet):
         self.stop_activity_item.connect("activate", self.on_stop_activity_activated, None)
         self.stop_activity_item.show()
         
+        self.new_activity_item = gtk.MenuItem(_(u"Add _new activity"))
+        self.menu.append(self.new_activity_item)
+        self.new_activity_item.connect("activate", self.on_new_activity_activated, None)
+        self.new_activity_item.show()
+        
         self.earlier_activity_item = gtk.MenuItem(_(u"Add earlier activity"))
         self.menu.append(self.earlier_activity_item)
         self.earlier_activity_item.connect("activate", self.on_earlier_activity_activated, None)
@@ -202,19 +207,21 @@ class HamsterIndicator(HamsterApplet):
         start_date = today - dt.timedelta(days=5)
         end_date = dt.datetime.now() # Hamster returns zero results without an end date
         facts = runtime.storage.get_facts(start_date, end_date)
-        facts.sort(key=lambda fact:(fact.category, fact.activity, fact.end_time or dt.datetime.now()), reverse=True)
+        facts.sort (key=lambda fact : (fact.category, fact.activity, fact.end_time or dt.datetime.now ()), reverse=True)
         print "[facts sort]"
-        print map(lambda fact:("%s - %s (%s)" % (fact.category, fact.activity, fact.end_time)), facts)
-        grouped = map(lambda group:(list(group[1])), groupby(facts, key=lambda fact:(fact.category, fact.activity)))
-        grouped.sort(key=lambda group: max(group, key=lambda fact:fact.end_time or dt.datetime.now()), reverse=True)
+        for fact in facts:
+            print "%s - %s (%s)" % (fact.category, fact.activity, fact.end_time)
+        grouped = map (lambda group : (list (group[1])), groupby (facts, key=lambda fact : (fact.category, fact.activity)))
+        grouped.sort (key=lambda group : max (group, key=lambda fact : fact.end_time or dt.datetime.now ()), reverse=True)
         print "[grouped]"
         for group in grouped:
             category = group[0].category
             activity = group[0].activity
-            print "%s - %s (%s)" % (category, activity, max(group, key=lambda fact:fact.end_time or dt.datetime.now()).end_time)
+            print "%s - %s (%s)" % (category, activity, max(group, key=lambda fact : fact.end_time or dt.datetime.now()).end_time)
             total_minutes = sum(self.get_duration_from_fact(fact, today) for fact in group) / 60
             label = activity
-            if self.activity == activity:
+            is_current_activity = self.activity == activity
+            if is_current_activity:
                 label = "%s %s (%s)" % (activity, stuff.format_duration(total_minutes, False), self.duration)
             elif total_minutes > 0:
                 label = "%s %s" % (activity, stuff.format_duration(total_minutes, False))
@@ -224,7 +231,10 @@ class HamsterIndicator(HamsterApplet):
             previous_activity_item = gtk.MenuItem(label)
             menu.insert(previous_activity_item, position)
             position += 1
-            previous_activity_item.connect("activate", self.on_previous_activity_activated, category, activity)
+            if is_current_activity:
+                previous_activity_item.connect("activate",  self.on_stop_activity_activated, None)
+            else:
+                previous_activity_item.connect("activate", self.on_previous_activity_activated, category, activity)
             previous_activity_item.show()
             self.previous_activity_items.append(previous_activity_item)
 
