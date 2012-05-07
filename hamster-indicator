@@ -200,16 +200,11 @@ class HamsterIndicator(HamsterApplet):
         end_date = dt.datetime.now() # Hamster returns zero results without an end date
         facts = runtime.storage.get_facts(start_date, end_date)
         facts.sort (key=lambda fact : (fact.category, fact.activity, fact.end_time or dt.datetime.now ()), reverse=True)
-        print "[facts sort]"
-        for fact in facts:
-            print "%s - %s (%s)" % (fact.category, fact.activity, fact.end_time)
         grouped = map (lambda group : (list (group[1])), groupby (facts, key=lambda fact : (fact.category, fact.activity)))
         grouped.sort (key=lambda group : max (group, key=lambda fact : fact.end_time or dt.datetime.now ()), reverse=True)
-        print "[grouped]"
         for group in grouped:
             category = group[0].category
             activity = group[0].activity
-            print "%s - %s (%s)" % (category, activity, max(group, key=lambda fact : fact.end_time or dt.datetime.now()).end_time)
             total_minutes = sum(self.get_duration_from_fact(fact, today) for fact in group) / 60
             label = activity
             is_current_activity = self.activity == activity
