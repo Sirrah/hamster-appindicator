@@ -121,14 +121,6 @@ class HamsterIndicator(HamsterApplet):
         self.activity, self.duration = None, None
 
         self.menu = gtk.Menu()
-        self.activity_item = gtk.MenuItem("")
-        self.menu.append(self.activity_item)
-        self.activity_item.connect("activate", self.on_new_activity_activated, None)
-        self.activity_label = self.activity_item.get_child()
-        self.activity_label.connect('style-set', self.on_label_style_set)
-        self.activity_item.show()
-
-        self.previous_activity_items_pos = self.append_separator(self.menu)
 
         # This spot will be filled with previous activities added after a call to  self.update_label 
 
@@ -202,7 +194,7 @@ class HamsterIndicator(HamsterApplet):
             item.destroy()
         del self.previous_activity_items[:]
         
-        position = 2 # position this list of activities directly after the first break
+        position = 0 # position this list of activities directly after the first break
         today = self.get_today()
         start_date = today - dt.timedelta(days=5)
         end_date = dt.datetime.now() # Hamster returns zero results without an end date
@@ -280,14 +272,7 @@ class HamsterIndicator(HamsterApplet):
         self.indicator.set_menu(self.menu)
 
     def reformat_label(self):
-        '''This adds a method which belongs to hamster.applet.PanelButton'''
-        label = self.activity
-        if self.duration:
-            label = "%s %s" % (self.activity, self.duration)
-        label = '<span gravity="south">%s</span>' % label
-        if self.activity_label:
-            self.activity_label.set_markup("") #clear - seems to fix the warning
-            self.activity_label.set_markup(label)
+        pass
 
     def on_label_style_set(self, widget, something):
         self.reformat_label()
