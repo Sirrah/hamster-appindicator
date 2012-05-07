@@ -140,13 +140,16 @@ class HamsterIndicator(HamsterApplet):
         # TODO in that case, sort the list on last active activity so the current activity is on top, as it is with the current setup
         # TODO make activities with same name in different categories visually distinct
         today = self.get_today();
-        start_date = today - dt.timedelta(days=2)
+        start_date = today - dt.timedelta(days=5)
         end_date = dt.datetime.now() # no results without end date
         facts = runtime.storage.get_facts(start_date, end_date)
         facts.sort(key=lambda fact:fact.end_time or dt.datetime.now(), reverse=True)
-        for (category, activity), grouped_facts in groupby(facts, key=lambda fact:(fact.category, fact.activity)):
+        
+        group = lambda fact:(fact.category, fact.activity)
+        facts.sort(key=group)
+        for (category, activity), grouped_facts in groupby(facts, key=group):
             total_minutes = sum(self.get_duration_from_fact(fact, today) for fact in grouped_facts) / 60
-            label = "%s %s" % (activity, stuff.format_duration(total_minutes, False))
+            label = "%s %s" % (activity, stuff.format_duration(total_minutes, False)) if total_minutes > 0 else str(activity)
             
             self.previous_activity_item = gtk.MenuItem(label)
             self.menu.append(self.previous_activity_item)
