@@ -126,28 +126,19 @@ class HamsterIndicator(HamsterApplet):
         self.activity_label.connect('style-set', self.on_label_style_set)
         self.activity_item.show()
 
-        self.stop_activity_item = gtk.MenuItem(_(u"Sto_p Tracking"))
-        self.menu.append(self.stop_activity_item)
-        self.stop_activity_item.connect("activate", self.on_stop_activity_activated, None)
-        self.stop_activity_item.show()
-
         self.append_separator(self.menu)
 
         # List todays activities with the total time spend on each
         # TODO place in update function and subscribe to 'facts-changed' and 'activities-changed'
         # TODO place check in front of active item, this could also be done for the current activity which would negate the 'stop'-button.
         # If the stop button is removed the current activity could be merged in the list of totals as: <activity> <total time> (<running time>)
-        # TODO in that case, sort the list on last active activity so the current activity is on top, as it is with the current setup
         # TODO make activities with same name in different categories visually distinct
         today = self.get_today();
         start_date = today - dt.timedelta(days=5)
         end_date = dt.datetime.now() # no results without end date
         facts = runtime.storage.get_facts(start_date, end_date)
-        facts.sort(key=lambda fact:fact.end_time or dt.datetime.now(), reverse=True)
-        
-        group = lambda fact:(fact.category, fact.activity)
-        facts.sort(key=group)
-        for (category, activity), grouped_facts in groupby(facts, key=group):
+        facts.sort(key=lambda fact:(fact.end_time or dt.datetime.now(), fact.category, fact.activity), reverse=True)
+        for (category, activity), grouped_facts in groupby(facts, key=lambda fact:(fact.category, fact.activity)):
             total_minutes = sum(self.get_duration_from_fact(fact, today) for fact in grouped_facts) / 60
             label = "%s %s" % (activity, stuff.format_duration(total_minutes, False)) if total_minutes > 0 else str(activity)
             
@@ -158,6 +149,11 @@ class HamsterIndicator(HamsterApplet):
 
         self.append_separator(self.menu)
 
+        self.stop_activity_item = gtk.MenuItem(_(u"Sto_p Tracking"))
+        self.menu.append(self.stop_activity_item)
+        self.stop_activity_item.connect("activate", self.on_stop_activity_activated, None)
+        self.stop_activity_item.show()
+        
         self.earlier_activity_item = gtk.MenuItem(_(u"Add earlier activity"))
         self.menu.append(self.earlier_activity_item)
         self.earlier_activity_item.connect("activate", self.on_earlier_activity_activated, None)
