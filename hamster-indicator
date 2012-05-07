@@ -203,7 +203,6 @@ class HamsterIndicator(HamsterApplet):
         grouped = map(lambda group:(list(group[1])), groupby(facts, key=lambda fact:(fact.category, fact.activity)))
         grouped.sort(key=lambda group: max(group, key=lambda fact:fact.end_time or dt.datetime.now()), reverse=True)
         for group in grouped:
-            print max(group, key=lambda fact:fact.end_time or dt.datetime.now()).end_time
             category = group[0].category
             activity = group[0].activity
             total_minutes = sum(self.get_duration_from_fact(fact, today) for fact in group) / 60
