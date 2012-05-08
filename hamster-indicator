@@ -199,9 +199,9 @@ class HamsterIndicator(HamsterApplet):
         start_date = today - dt.timedelta(days=5)
         end_date = dt.datetime.now() # Hamster returns zero results without an end date
         facts = runtime.storage.get_facts(start_date, end_date)
-        facts.sort (key=lambda fact : (fact.category, fact.activity, fact.end_time or dt.datetime.now ()), reverse=True)
+        facts = sorted(facts, key=lambda fact : (fact.category, fact.activity, fact.end_time or dt.datetime.now ()), reverse=True)
         grouped = map (lambda group : (list (group[1])), groupby (facts, key=lambda fact : (fact.category, fact.activity)))
-        grouped.sort (key=lambda group : max (group, key=lambda fact : fact.end_time or dt.datetime.now ()), reverse=True)
+        grouped = sorted (grouped, key=lambda group : max (group, key=lambda fact : fact.end_time or dt.datetime.now ()), reverse=True)
         for group in grouped:
             category = group[0].category
             activity = group[0].activity
